@@ -1,0 +1,111 @@
+#!/bin/bash
+set -e
+install_opencv () {
+  echo "Detecting a Jetson Nano Orin."
+  # Use always "-j 4"
+  NO_JOB=4
+  ARCH=8.7
+  PTX="sm_87"
+  
+  echo "Installing OpenCV 4.12.0 on your Nano"
+  echo "It will take 3.5 hours !"
+  
+  # reveal the CUDA location
+  cd /root 
+  sudo sh -c "echo '/usr/local/cuda/lib64' >> /etc/ld.so.conf.d/nvidia-tegra.conf"
+  sudo ldconfig
+  
+  # remove old versions or previous builds
+  cd /root 
+  sudo rm -rf opencv*
+  # download the latest version
+  wget -O opencv.zip https://github.com/opencv/opencv/archive/4.12.0.zip 
+  wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.12.0.zip 
+  
+  # unpack
+  unzip opencv.zip 
+  unzip opencv_contrib.zip 
+
+  # Some administration to make life easier later on
+  mv opencv-4.12.0 opencv
+  mv opencv_contrib-4.12.0 opencv_contrib
+
+  # set install dir
+  cd /root/opencv
+  mkdir build
+  cd build
+  
+  # run cmake
+  cmake -D CMAKE_BUILD_TYPE=RELEASE \
+  -D CMAKE_INSTALL_PREFIX=/usr \
+  -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
+  -D EIGEN_INCLUDE_PATH=/usr/include/eigen3 \
+  -D WITH_OPENCL=OFF \
+  -D CUDA_ARCH_BIN=${ARCH} \
+  -D CUDA_ARCH_PTX=${PTX} \
+  -D WITH_CUDA=ON \
+  -D WITH_CUDNN=ON \
+  -D WITH_CUBLAS=ON \
+  -D ENABLE_FAST_MATH=ON \
+  -D CUDA_FAST_MATH=ON \
+  -D OPENCV_DNN_CUDA=ON \
+  -D ENABLE_NEON=ON \
+  -D WITH_QT=ON \
+  -D WITH_OPENMP=ON \
+  -D BUILD_TIFF=ON \
+  -D WITH_FFMPEG=ON \
+  -D WITH_GSTREAMER=ON \
+  -D WITH_TBB=ON \
+  -D BUILD_TBB=ON \
+  -D BUILD_TESTS=OFF \
+  -D WITH_EIGEN=ON \
+  -D WITH_V4L=ON \
+  -D WITH_LIBV4L=ON \
+  -D WITH_PROTOBUF=ON \
+  -D OPENCV_ENABLE_NONFREE=ON \
+  -D INSTALL_C_EXAMPLES=OFF \
+  -D INSTALL_PYTHON_EXAMPLES=ON \
+  -D PYTHON3_PACKAGES_PATH=/usr/lib/python3/dist-packages \
+  -D OPENCV_GENERATE_PKGCONFIG=ON \
+  -D BUILD_EXAMPLES=OFF \
+  -D CMAKE_CXX_FLAGS="-march=native -mtune=native" \
+  -D CMAKE_C_FLAGS="-march=native -mtune=native" ..
+ 
+  make -j 4 
+  
+  directory="/usr/include/opencv4/opencv2"
+  if [ -d "$directory" ]; then
+    # Directory exists, so delete it
+    sudo rm -rf "$directory"
+  fi
+  
+  sudo make install
+  sudo ldconfig
+  
+  # cleaning (frees 320 MB)
+  make clean
+  sudo apt-get update
+  
+  echo "Congratulations!"
+  echo "You've successfully installed OpenCV 4.12.0 on your Nano"
+}
+
+cd ~
+
+if [ -d ~/opencv/build ]; then
+  echo " "
+  echo "You have a directory ~/opencv/build on your disk."
+  echo "Continuing the installation will replace this folder."
+  echo " "
+  
+  printf "Do you wish to continue (Y/n)?"
+  read answer
+
+  if [ "$answer" != "${answer#[Nn]}" ] ;then 
+      echo "Leaving without installing OpenCV"
+  else
+      install_opencv
+  fi
+else
+    install_opencv
+fi
