@@ -1,0 +1,12 @@
+[Unit]
+Description=Victoria Metrics
+After=network.target 
+
+[Service]
+ExecStart=/home/VictoriaMetrics/vmctl.sh start
+Type=forking 
+Restart=on-failure 
+User=victoria-metrics 
+
+[Install]
+WantedBy=multi-user.target 

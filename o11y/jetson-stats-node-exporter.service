@@ -1,0 +1,16 @@
+[Unit]
+Description=Jetson Stats GPU Node Exporter
+After=multi-user.target
+Requires=jtop.service
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=10
+User=root
+Group=root
+ExecStart=/usr/bin/python3 -m jetson_stats_node_exporter
+
+[Install]
+WantedBy=multi-user.target
+

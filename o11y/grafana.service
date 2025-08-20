@@ -1,0 +1,11 @@
+[Unit]
+Description=Grafana 
+After=network.target 
+
+[Service]
+ExecStart=/home/grafana/grafanactl.sh start
+Type=forking 
+Restart=on-failure 
+
+[Install]
+WantedBy=multi-user.target 
